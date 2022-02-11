@@ -44,18 +44,19 @@ def parse_webpage(soup):
         gaffs[count].update({"price": k_text})
         count += 1
 
+    return gaffs
+
 
 def file_write_and_check(gaffs):
     # with open("gaffs.json", "r") as file_read:
     #     json_object = json.load(file_read)
 
     # print(json_object)
-        
+
     # file_read.close()
 
-
     with open("gaffs.json", "a+") as file:
-        file.write(json.dumps(gaffs, indent=4) + ",\n")
+        file.write(json.dumps(gaffs, indent=4))
     file.close()
 
 
