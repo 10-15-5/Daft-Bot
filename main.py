@@ -1,6 +1,26 @@
+from cmath import log
 from bs4 import BeautifulSoup
 import requests
 import json
+import os
+import logging
+
+
+# ------------------------------------------------------------------
+#   Logging Setup
+# ------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%d-%m-%y %H:%M:%S')
+
+file_handler = logging.FileHandler("logs.log", encoding='utf8')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+# ------------------------------------------------------------------
 
 
 def main():
@@ -16,7 +36,14 @@ def main():
 
     gaffs = parse_webpage(soup)
 
-    file_write_and_check(gaffs)
+    if not os.path.exists("gaffs.json"):
+        new_gaffs = new_file_write(gaffs)
+        msg = "First run of program, gaffs found: " + str(new_gaffs)
+        logger.info(msg)
+    else:
+        new_gaffs = file_write_and_check(gaffs)
+        msg = "New gaff(s) found: " + str(new_gaffs)
+        logger.info(msg)
 
 def parse_webpage(soup):
 
@@ -46,17 +73,36 @@ def parse_webpage(soup):
     return gaffs
 
 
-def file_write_and_check(gaffs):
-    # with open("gaffs.json", "r") as file_read:
-    #     json_object = json.load(file_read)
-
-    # print(json_object)
-
-    # file_read.close()
-
-    with open("gaffs.json", "a+") as file:
+def new_file_write(gaffs):
+    with open("gaffs.json", "w") as file:
         file.write(json.dumps(gaffs, indent=4))
     file.close()
+
+    return gaffs
+
+
+def file_write_and_check(gaffs):
+    new_gaffs = []
+
+    gaffs.append({'address': 'Ballon', 'beds': '4 Bed', 'price': '2,694 per month '})
+
+    with open("gaffs.json", "r") as file_read:
+        json_object = json.load(file_read)
+
+    for i in range(len(gaffs)):
+        if gaffs[i] not in json_object:
+            new_gaffs.append(gaffs[i])
+
+    file_read.close()
+
+    if len(new_gaffs) > 0:
+        for j in range(len(new_gaffs)):
+            json_object.append(new_gaffs[j])
+        with open("gaffs.json", "w") as file:
+            file.write(json.dumps(json_object, indent=4))
+        file.close()
+
+    return new_gaffs
 
 
 if __name__ == "__main__":
