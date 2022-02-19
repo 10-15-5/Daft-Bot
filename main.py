@@ -1,9 +1,12 @@
-from cmath import log
 from bs4 import BeautifulSoup
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 import requests
 import json
 import os
 import logging
+import smtplib
 
 
 # ------------------------------------------------------------------
@@ -101,8 +104,40 @@ def file_write_and_check(gaffs):
         with open("gaffs.json", "w") as file:
             file.write(json.dumps(json_object, indent=4))
         file.close()
+        send_email(new_gaffs)
 
     return new_gaffs
+
+
+def send_email(gaffs):
+    smtp = smtplib.SMTP("EMAIL SMTP SERVER", "EMAIL SMTP SERVER PORT")
+    
+    try:
+        email_content = "Found new gaff(s): "
+        for i in range(len(gaffs)):
+            email_content += "\n" + str(gaffs[i])
+
+        smtp.ehlo()
+        smtp.starttls()
+
+        smtp.login("SENDING EMAIL", "SENDING PASSWORD")
+
+        message = MIMEMultipart()
+        message["Subject"] = "Daft Gaff Update"
+        message.attach(MIMEText(email_content))
+
+        smtp.sendmail(
+            from_addr="SEDNING EMAIL",
+            to_addrs="RECEIVING EMAIL",
+            msg=message.as_string()
+        )
+
+        logger.info("Email successfully sent!")
+    except Exception as e:
+        logger.error(e)
+    
+    smtp.quit()
+
 
 
 if __name__ == "__main__":
