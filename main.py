@@ -6,8 +6,7 @@ import json
 def main():
 
     # Creating a connction with the daft.ie website and adding headers
-    headers = {"User-Agent": "Mozilla/5.0 (Linux; U; Android 4.2.2; he-il; NEO-X5-116A Build/JDQ39) AppleWebKit/534.30 ("
-                            "KHTML, like Gecko) Version/4.0 Safari/534.30"}
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0"}
 
     response = requests.get("https://www.daft.ie/property-for-rent/kildare?numBeds_from=4", headers=headers)
     webpage = response.content
