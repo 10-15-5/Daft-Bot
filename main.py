@@ -102,35 +102,41 @@ def file_write_and_check(gaffs):
         with open("gaffs.json", "w") as file:
             file.write(json.dumps(json_object, indent=4))
         file.close()
-        send_email(new_gaffs)
+        # send_email(new_gaffs)
+    send_email(json_object)
 
     return new_gaffs
 
 
 def send_email(gaffs):
-    smtp = smtplib.SMTP("EMAIL SMTP SERVER", "EMAIL SMTP SERVER PORT")
+    sender_email = "xxxxxxxxxx@xxxxxxx.com"
+    receiver_email = "xxxxxxxxxx@xxxxxxx.com"
+
+    smtp = smtplib.SMTP("EMAIL SERVER", "EMAIL SERVER PORT")
     
     try:
-        email_content = "Found new gaff(s): "
+        email_content = "Gaffs to rent in Kildare: "
         for i in range(len(gaffs)):
             email_content += "\n" + str(gaffs[i])
 
         smtp.ehlo()
         smtp.starttls()
 
-        smtp.login("SENDING EMAIL", "SENDING PASSWORD")
+        smtp.login(sender_email, "SENDER EMAIL PASSWORD")
 
         message = MIMEMultipart()
         message["Subject"] = "Daft Gaff Update"
+        message["From"] = sender_email
+        message["To"] = receiver_email
         message.attach(MIMEText(email_content))
 
         smtp.sendmail(
-            from_addr="SEDNING EMAIL",
-            to_addrs="RECEIVING EMAIL",
+            from_addr=sender_email,
+            to_addrs=receiver_email,
             msg=message.as_string()
         )
 
-        logger.info("Email successfully sent!")
+        logger.info("Email successfully sent to:\t" + receiver_email)
     except Exception as e:
         logger.error(e)
     
