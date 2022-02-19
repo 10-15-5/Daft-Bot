@@ -87,8 +87,6 @@ def new_file_write(gaffs):
 def file_write_and_check(gaffs):
     new_gaffs = []
 
-    gaffs.append({'address': 'Ballon', 'beds': '4 Bed', 'price': '2,694 per month '})
-
     with open("gaffs.json", "r") as file_read:
         json_object = json.load(file_read)
 
