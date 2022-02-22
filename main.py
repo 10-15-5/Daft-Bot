@@ -123,7 +123,9 @@ def send_email(gaffs):
     try:
         email_content = "Gaffs to rent: "
         for i in range(len(gaffs)):
-            email_content += "\n" + str(gaffs[i])
+            email_content += "\n" + "Address:\t" + str(gaffs[i]["address"])
+            email_content += "\n" + "Beds:\t" + str(gaffs[i]["beds"])
+            email_content += "\n" + "Price:\t" + "€" + str(gaffs[i]["price"]) + "\n"
 
         smtp.ehlo()
         smtp.starttls()
@@ -148,7 +150,6 @@ def send_email(gaffs):
         logger.error(e)
     
     smtp.quit()
-
 
 
 if __name__ == "__main__":
