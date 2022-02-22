@@ -1,12 +1,13 @@
-from bs4 import BeautifulSoup
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 import requests
 import json
 import os
 import logging
 import smtplib
+import configparser
+
+from bs4 import BeautifulSoup
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 # ------------------------------------------------------------------
@@ -18,12 +19,16 @@ logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%d-%m-%y %H:%M:%S')
 
-file_handler = logging.FileHandler("logs.log", encoding='utf8')
+file_handler = logging.FileHandler("settings/logs.log", encoding='utf8')
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
 # ------------------------------------------------------------------
+
+config = configparser.RawConfigParser()
+configFilePath = r"settings/config.txt"
+config.read(configFilePath, encoding="utf-8")
 
 
 def main():
@@ -31,7 +36,7 @@ def main():
     # Creating a connction with the daft.ie website and adding headers
     headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0"}
 
-    response = requests.get("https://www.daft.ie/property-for-rent/kildare?numBeds_from=4", headers=headers)
+    response = requests.get(config.get("CONFIG", "DAFT_URL"), headers=headers)
     webpage = response.content
 
     # Parsing the webpage with Beautiful Soup
@@ -45,16 +50,19 @@ def main():
         logger.info(msg)
     else:
         new_gaffs = file_write_and_check(gaffs)
-        msg = "New gaff(s) found: " + str(new_gaffs)
+        if len(new_gaffs) == 0:
+            msg = "No new gaffs found"
+        else:
+            msg = "New gaff(s) found: " + str(new_gaffs)
         logger.info(msg)
 
 def parse_webpage(soup):
 
     gaffs = []
 
-    gaff = soup.find_all(class_="TitleBlock__Address-sc-1avkvav-7 hRrWbx")
-    beds = soup.find_all(class_="TitleBlock__CardInfoItem-sc-1avkvav-8 uaMgE")
-    price = soup.find_all(class_="TitleBlock__StyledSpan-sc-1avkvav-4 bNjvqX")
+    gaff = soup.find_all(class_=config.get("CONFIG", "GAFF_CLASS"))
+    beds = soup.find_all(class_=config.get("CONFIG", "BEDS_CLASS"))
+    price = soup.find_all(class_=config.get("CONFIG", "PRICE_CLASS"))
 
     for i in gaff:
         gaff = {"address": i.text}
@@ -102,41 +110,40 @@ def file_write_and_check(gaffs):
         with open("gaffs.json", "w") as file:
             file.write(json.dumps(json_object, indent=4))
         file.close()
-        # send_email(new_gaffs)
-    send_email(json_object)
+        send_email(new_gaffs)
 
     return new_gaffs
 
 
 def send_email(gaffs):
-    sender_email = "xxxxxxxxxx@xxxxxxx.com"
-    receiver_email = "xxxxxxxxxx@xxxxxxx.com"
+    smtp = smtplib.SMTP(config.get("CONFIG", "SMTP_SERVER"), config.get("CONFIG", "SMTP_PORT"))
 
-    smtp = smtplib.SMTP("EMAIL SERVER", "EMAIL SERVER PORT")
+    receiving_emails = config.get("CONFIG", "SMTP_RECEIVING_EMAIL").split(",")
     
     try:
-        email_content = "Gaffs to rent in Kildare: "
+        email_content = "Gaffs to rent: "
         for i in range(len(gaffs)):
             email_content += "\n" + str(gaffs[i])
 
         smtp.ehlo()
         smtp.starttls()
 
-        smtp.login(sender_email, "SENDER EMAIL PASSWORD")
+        smtp.login(config.get("CONFIG", "SMTP_SENDING_EMAIL"), config.get("CONFIG", "SMTP_PASSWORD"))
 
-        message = MIMEMultipart()
-        message["Subject"] = "Daft Gaff Update"
-        message["From"] = sender_email
-        message["To"] = receiver_email
-        message.attach(MIMEText(email_content))
+        for email in receiving_emails:
+            message = MIMEMultipart()
+            message["Subject"] = "Daft Gaff Update"
+            message["From"] = config.get("CONFIG", "SMTP_SENDING_EMAIL")
+            message["To"] = email
+            message.attach(MIMEText(email_content))
 
-        smtp.sendmail(
-            from_addr=sender_email,
-            to_addrs=receiver_email,
-            msg=message.as_string()
-        )
+            smtp.sendmail(
+                from_addr=config.get("CONFIG", "SMTP_SENDING_EMAIL"),
+                to_addrs=email,
+                msg=message.as_string()
+            )
 
-        logger.info("Email successfully sent to:\t" + receiver_email)
+            logger.info("Email successfully sent to:\t" + email)
     except Exception as e:
         logger.error(e)
     
