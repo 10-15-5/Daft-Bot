@@ -4,6 +4,7 @@ import os
 import logging
 import smtplib
 import configparser
+import re
 
 from bs4 import BeautifulSoup
 from email.mime.text import MIMEText
@@ -48,6 +49,7 @@ def main():
         new_gaffs = new_file_write(gaffs)
         msg = "First run of program, gaffs found: " + str(new_gaffs)
         logger.info(msg)
+        send_email(new_gaffs)
     else:
         new_gaffs = file_write_and_check(gaffs)
         if len(new_gaffs) == 0:
@@ -77,9 +79,10 @@ def parse_webpage(soup):
 
     count = 0
     for k in price:
-        k_text = (k.text).replace("€", "")
-        gaffs[count].update({"price": k_text})
-        count += 1
+        if re.match("^€[1-9]", k.text):
+            k_text = (k.text).replace("€", "")
+            gaffs[count].update({"price": k_text})
+            count += 1
 
     return gaffs
 
@@ -121,7 +124,7 @@ def send_email(gaffs):
     receiving_emails = config.get("CONFIG", "SMTP_RECEIVING_EMAIL").split(",")
     
     try:
-        email_content = "Gaffs to rent: "
+        email_content = "Gaffs to rent: \n\n"
         for i in range(len(gaffs)):
             email_content += "\n" + "Address:\t" + str(gaffs[i]["address"])
             email_content += "\n" + "Beds:\t" + str(gaffs[i]["beds"])
