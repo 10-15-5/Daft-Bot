@@ -114,7 +114,10 @@ def file_write_and_check(gaffs):
             file.write(json.dumps(json_object, indent=4))
         file.close()
         send_email(new_gaffs)
-
+    elif len(gaffs) < len(json_object) and len(new_gaffs) == 0:
+        with open("gaffs.json", "w") as file:
+            file.write(json.dumps(gaffs, indent=4))
+        file.close()
     return new_gaffs
 
 
