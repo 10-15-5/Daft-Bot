@@ -5,6 +5,7 @@ import logging
 import smtplib
 import configparser
 import re
+import time
 
 from bs4 import BeautifulSoup
 from email.mime.text import MIMEText
@@ -34,29 +35,32 @@ config.read(configFilePath, encoding="utf-8")
 
 def main():
 
-    # Creating a connction with the daft.ie website and adding headers
-    headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0"}
+    while(True):
+        # Creating a connction with the daft.ie website and adding headers
+        headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0"}
 
-    response = requests.get(config.get("CONFIG", "DAFT_URL"), headers=headers)
-    webpage = response.content
+        response = requests.get(config.get("CONFIG", "DAFT_URL"), headers=headers)
+        webpage = response.content
 
-    # Parsing the webpage with Beautiful Soup
-    soup = BeautifulSoup(webpage, "html.parser")
+        # Parsing the webpage with Beautiful Soup
+        soup = BeautifulSoup(webpage, "html.parser")
 
-    gaffs = parse_webpage(soup)
+        gaffs = parse_webpage(soup)
 
-    if not os.path.exists("gaffs.json"):
-        new_gaffs = new_file_write(gaffs)
-        msg = "First run of program, gaffs found: " + str(new_gaffs)
-        logger.info(msg)
-        send_email(new_gaffs)
-    else:
-        new_gaffs = file_write_and_check(gaffs)
-        if len(new_gaffs) == 0:
-            msg = "No new gaffs found"
+        if not os.path.exists("gaffs.json"):
+            new_gaffs = new_file_write(gaffs)
+            msg = "First run of program, gaffs found: " + str(new_gaffs)
+            logger.info(msg)
+            send_email(new_gaffs)
         else:
-            msg = "New gaff(s) found: " + str(new_gaffs)
-        logger.info(msg)
+            new_gaffs = file_write_and_check(gaffs)
+            if len(new_gaffs) == 0:
+                msg = "No new gaffs found"
+            else:
+                msg = "New gaff(s) found: " + str(new_gaffs)
+            logger.info(msg)
+        
+        time.sleep(int(config.get("CONFIG", "WAIT_PERIOD")))
 
 def parse_webpage(soup):
 
